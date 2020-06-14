@@ -1,0 +1,69 @@
+method:
+  task: pairwise # Name of the task, one of [pairwise, multiview]
+  descriptor_module: null # Descriptor method to be used. If null precomputed correspondences are used for training.
+  filter_module: oanet # Filtering method to be used.
+
+misc:
+  run_mode: train # Mode to run the network in 
+  net_depth: 12 # Number of layers
+  clusters: 500 # Number of clusters
+  iter_num: 1   # Number of iterations in the iterative network
+  net_channel: 128 # Number of channels in a layer
+  trainer: 'PairwiseTrainer' # Which class of trainer to use. Can be used if multiple different trainers are defined.
+  use_gpu: True # If GPU should be used or not
+  best_validation_metric: loss # Which validation metric to use. 0 Transformation loss, 1 Classification loss
+  log_dir: ./logs/pairwise_registration # Path to the folder where the models and logs will be saves
+  normalize_weights: True # If the inferred per point weights should be normalized to sum to 1 before SVD
+  trans_loss_margin: 0.1 # Value for clipping the transformation loss
+  inlier_weight_threshold: 0.5 # Threshold for determining the inlier/outlier class
+  
+data:
+  dataset: Precomputed3DMatchExample
+  root: ./data/train_data/3d_match/
+  dist_th: 0.05 # Distance threshold for ground truth labels
+  shuffle_examples: True # Shuffle training examples in the data loader
+  augment_data: True # If data should be augmented by being transformed with random transformation parameters 
+  jitter: True # If jitter should be applied to input point clouds
+  use_mutuals: False # Use only mutual nearest neighbors or all correspondences. 0 do not use, 1 use as filter, 2 use as side info
+  max_num_points: 2000 #Number of keypoints to use per training example
+
+loss:
+  trans_loss_type: 3 # Type of transformation loss: 0 Eucl. distance to correspondence, 1 Fro. norm, 2 Eucl. distance to GT, 3 L1 distance to GT
+  loss_class: 1 # Weight of the classification loss
+  loss_trans: 0.2 # Weight of the transformation loss
+  loss_desc: 0.0 # Weight of the descriptor loss (only used if descriptor module is specified)
+  trans_loss_iter: 15000 # Iteration at which the transformation and confidence loss are added
+  inlier_threshold: 0.05 # GT inlier threshold (if gt inlier ratio is lower than this threshold the transformation loss will not be backpropagated)
+
+train:
+  batch_size: 8 # Training batch size
+  num_workers: 8 # Number of workers used for the data loader
+  max_epoch: 500 # Max number of training epochs
+  stat_interval: 5 # Interval at which the stats are printed out and saved for the tensorboard (if positive it denotes iteration if negative epochs)
+  chkpt_interval: 100 # Interval at which the model is saved (if positive it denotes iteration if negative epochs)
+  val_interval: 300 # Interval at which the validation is performed (if positive it denotes iteration if negative epochs)
+  model_selection_metric: loss # Metric used to determine best model on the validation dataset
+  model_selection_mode: minimize # Metric used to determine best model on the validation dataset
+  samp_type: rand # Sampler type on of [rand, fps]
+  corr_type: soft # Feature matching type on of [soft, hard, gumbel_soft]
+  st_grad_flag: True # If true and soft or gumbel_soft corr are selected, the gradients are propagated straight through (https://arxiv.org/abs/1308.3432)
+  compute_precision: True # Compute precision and recall of the per correspondence classification 
+
+val:
+  batch_size: 8 # Validation batch size
+  num_workers: 1 # Number of workers for the validation data set
+
+test:
+  results_path: '' # Path to where to save the test results
+  batch_size: 8 # Test batch size
+  num_workers: 1 # Num of workers to use for the test data set
+
+optimizer:
+  alg: Adam # Which optimizer to use
+  learning_rate: 0.0001 # Initial learning rate
+  weight_decay: 0.0 # Weight decay weight
+  momentum: 0.9 #Momentum
+
+model:
+  init_from: null # Path to the pretrained model
+  init_file_name: model_best.pt # Pretrained model filename 
