@@ -334,9 +334,9 @@ class RawIndoorDataset(data.Dataset):
 class Precomputed3DMatch(PrecomputedIndoorDataset):
     # 3D Match dataset all files
     DATA_FILES = {
-        'train': './configs/3DMatch/3DMatch_all_train.txt',
-        'val': './configs/3DMatch/3DMatch_all_valid.txt',
-        'test': './configs/3DMatch/test_all.txt'
+        'train': './configs/3d_match/3d_match_all_train.txt',
+        'val': './configs/3d_match/3d_match_all_valid.txt',
+        'test': './configs/3d_match/test_all.txt'
     }
 
 class Precomputed3DMatchFiltered(PrecomputedIndoorDataset):
@@ -344,9 +344,9 @@ class Precomputed3DMatchFiltered(PrecomputedIndoorDataset):
     # that have more than 5% inliers (see dataset readme for more info)
 
     DATA_FILES = {
-        'train': './configs/3DMatch_new/3DMatch_filtered_train.txt',
-        'val': './configs/3DMatch_new/3DMatch_filtered_valid.txt',
-        'test': './configs/3DMatch/test_all.txt'
+        'train': './configs/3d_match/3DMatch_filtered_train.txt',
+        'val': './configs/3d_match/3DMatch_filtered_valid.txt',
+        'test': './configs/3d_match/test_all.txt'
     }
 
 

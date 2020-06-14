@@ -1,0 +1,74 @@
+method: ACNENet
+
+misc:
+  net_depth: 12 # Number of layers
+  clusters: 500 # Number of clusters
+  groups: 32 # Number of groups
+  iter_num: 1   # Number of iterations in the iterative network
+  net_channel: 128 # Number of channels in a layer
+  share_param: False # Share the parameters of the iterative network
+  use_mutuals: False # Use only mutual nearest neighbors or all correspondences. 0 do not use, 1 use as filter, 2 use as side info
+  use_ratio: False # Use the ratio between the first and the second NN in the feature space. 0 do not use, 1 use as filter, 2 use as side info
+  use_ratio_th: 0.9 # Threhsold for the filtering based on the ration between the first and the second NN in feature space
+  max_num_points: 5000 #Number of keypoints to use per training example
+  dist_th: 0.075 # Distance threshold for ground truth labels
+  run_mode: train # Run mode, one of: train, test or valid
+  trainer: 'TransformationTrainer' # Which class of trainer to use. Can be used if multiple different trainers are defined.
+  use_gpu: True # If GPU should be used or not
+  best_validation_metric: loss # Which validation metric to use. 0 Transformation loss, 1 Classification loss
+  out_dir: ./logs/ACNE/ # Path to the folder where the models and logs will be saves
+  stat_intv: 1 # Interval at which the stats are saved for the tensorboard
+  acne_output: True # If the output block should be the another ACNE block or a fully connected network with tanh and relu 
+
+data:
+  dataset: Dataset3DMatchFiltered
+  root: ./datasets/fcgf_3dmatch_data/
+  shuffle_examples: True # Shuffle training examples in the data loader
+
+loss:
+  weight_decay: 0.0 # L2 decay of the wrights
+  momentum: 0.9 #Momentum
+  trans_loss_type: 2 # Type of transformation loss to be used: 0 is vector distance to correspondence, 1 forbenius norm, 2 vector distance to GT
+  conf_loss_type: 0 # Type of the confidence loss: 0 classification, 1 regression
+  loss_class: 1 # Weight of the classification loss
+  loss_trans: 1 # Weight of the transformation loss
+  loss_trans_iter: 15000 # Iteration at which the transformation loss is added
+  loss_conf_iter: 0 # Iteration at which the confidence loss is added
+  conf_loss_beta: 0.5 # Controls the steepness of the sigmoid in the confidence loss
+  conf_loss_offset: 5 # Centering ot the confidence loss in degrees
+  loss_conf: 0.5 # Weight of the confidence loss
+
+train:
+  batch_size: 8 # Training batch size
+  device: 'cuda' # Device to use for training cuda or cpu
+  resume: False # If resume from the saved checkpoint
+  model_path: '' # Path to the pretrained model
+  num_workers: 0 # Number of workers used for the data loader
+  max_epoch: 500 # Max number of training epochs
+  log_base: './' # Base save path for the training logs
+  save_intv: 1 # Save interval in epochs
+  data_aug_iter: 25000 # When to start data augmentation 25000
+  data_aug_freq: 5000 # Frequency with which data augmentation is increased
+  data_aug_step: 20 # Step size for data augmentation in degreees
+  iter_size: 1 # Number of iterations to acumulate the gradient
+
+val:
+  val_intv: 1 # Validation interval in epochs
+  batch_size: 8 # Validation batch size
+  num_workers: 0 # Number of workers for the validation data set
+
+test:
+  model_path: '' # Path to the model used for evaluation
+  results_path: '' # Path to where to save the test results
+  batch_size: 8 # Test batch size
+  num_workers: 1 # Num of workers to use for the test data set
+
+optimizer:
+  alg: Adam # Which optimizer to use
+  learning_rate: 0.001 # Initial learning rate
+  exp_gamm: 0.999 # Learning rate decay
+  lr_scheduling: None # Learning rate scheduling
+  weight_decay: 0 # Weight decay weight
+
+visulaization:
+  tqdm_width: 79 # Width of the tqdm bar

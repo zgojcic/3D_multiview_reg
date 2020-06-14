@@ -12,15 +12,16 @@ misc:
   trainer: 'PairwiseTrainer' # Which class of trainer to use. Can be used if multiple different trainers are defined.
   use_gpu: True # If GPU should be used or not
   best_validation_metric: loss # Which validation metric to use. 0 Transformation loss, 1 Classification loss
-  log_dir: ./logs/pairwise_registration # Path to the folder where the models and logs will be saves
+  log_dir: ./logs/pairwise_registration # Path to the base folder where the models and logs will be saves
+  log_path: 'No_Desc_oanet/200611_001723' # Folder name in which the logs will be saved
   normalize_weights: True # If the inferred per point weights should be normalized to sum to 1 before SVD
   trans_loss_margin: 0.1 # Value for clipping the transformation loss
   inlier_weight_threshold: 0.5 # Threshold for determining the inlier/outlier class
   
 data:
   dataset: Precomputed3DMatchFiltered
-  root: ./datasets/3d_match_new/
-  dist_th: 0.05 # Distance threshold for ground truth labels
+  root: ./data/training_data/3d_match/
+  dist_th: 0.075 # Distance threshold for ground truth labels
   shuffle_examples: True # Shuffle training examples in the data loader
   augment_data: True # If data should be augmented by being transformed with random transformation parameters 
   jitter: True # If jitter should be applied to input point clouds
@@ -33,7 +34,7 @@ loss:
   loss_trans: 0.4 # Weight of the transformation loss
   loss_desc: 0.0 # Weight of the descriptor loss (only used if descriptor module is specified)
   trans_loss_iter: 15000 # Iteration at which the transformation and confidence loss are added
-  inlier_threshold: 0.05 # GT inlier threshold (if gt inlier ratio is lower than this threshold the transformation loss will not be backpropagated)
+  inlier_threshold: 0.075 # GT inlier threshold (if gt inlier ratio is lower than this threshold the transformation loss will not be backpropagated)
 
 train:
   batch_size: 16 # Training batch size

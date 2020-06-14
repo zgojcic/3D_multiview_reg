@@ -1,3 +1,8 @@
+# A simple torch style logger
+# code borrowed from OANet repository: https://github.com/zjhthu/OANet/blob/master/core/logger.py
+# (C) Wei YANG 2017
+
+from __future__ import absolute_import
 import os
 import sys
 import numpy as np
@@ -7,11 +12,12 @@ import coloredlogs
 import git
 import subprocess
 
+__all__ = ['Logger', 'LoggerMonitor', 'savefig']
 
 _logger = logging.getLogger()
 
 
-def print_info(cfg, log_dir=None):
+def print_info(config, log_dir=None):
     """ Logs source code configuration
 
         Code adapted from RPMNet repository: https://github.com/yewzijian/RPMNet/
@@ -37,7 +43,7 @@ def print_info(cfg, log_dir=None):
     # Arguments
     arg_str = []
 
-    for k_id, k_val in cfg.items():
+    for k_id, k_val in config.items():
         for key in k_val:
             arg_str.append("{}_{}: {}".format(k_id, key, k_val[key]))
 
@@ -45,26 +51,30 @@ def print_info(cfg, log_dir=None):
     _logger.info('Arguments: {}'.format(arg_str))
 
 
-def prepare_logger(cfg, log_path = None):
+def prepare_logger(config, log_path = None):
     """Creates logging directory, and installs colorlogs 
     Args:
-        cfg (dict): config parmaters
-        log_path (str): Logging path (optional). This serves to overwrite the settings in cfg
-
+        opt: Program arguments, should include --dev and --logdir flag.
+             See get_parent_parser()
+        log_path: Logging path (optional). This serves to overwrite the settings in
+                 argparse namespace
     Returns:
-        logger (logging.Logger): logger instance
+        logger (logging.Logger)
         log_path (str): Logging directory
 
     Code borrowed from RPMNet repository: https://github.com/yewzijian/RPMNet/
     """
 
-    logdir = cfg['misc']['log_dir']
+    logdir = config['misc']['log_dir']
 
     if log_path is None:
         datetime_str = datetime.now().strftime('%y%m%d_%H%M%S')
-        log_path = os.path.join(logdir, cfg['method']['descriptor_module'] if cfg['method']['descriptor_module'] else 'No_Desc' + '_' +  
-                                        cfg['method']['filter_module'] if cfg['method']['filter_module'] else 'No_Filter', datetime_str)
+        log_path = os.path.join(logdir, config['method']['descriptor_module'] if config['method']['descriptor_module'] else 'No_Desc' + '_' +  
+                                        config['method']['filter_module'] if config['method']['filter_module'] else 'No_Filter', datetime_str)
 
+    else:
+        log_path = os.path.join(logdir, log_path)
+    
     os.makedirs(log_path, exist_ok=True)
 
     logger = logging.getLogger()
@@ -73,9 +83,37 @@ def prepare_logger(cfg, log_path = None):
     log_formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s - %(message)s')
     file_handler.setFormatter(log_formatter)
     logger.addHandler(file_handler)
-    print_info(cfg, log_path)
+    print_info(config, log_path)
     logger.info('Output and logs will be saved to {}'.format(log_path))
 
     return logger, log_path
 
 
+
+if __name__ == '__main__':
+    # # Example
+    # logger = Logger('test.txt')
+    # logger.set_names(['Train loss', 'Valid loss','Test loss'])
+
+    # length = 100
+    # t = np.arange(length)
+    # train_loss = np.exp(-t / 10.0) + np.random.rand(length) * 0.1
+    # valid_loss = np.exp(-t / 10.0) + np.random.rand(length) * 0.1
+    # test_loss = np.exp(-t / 10.0) + np.random.rand(length) * 0.1
+
+    # for i in range(0, length):
+    #     logger.append([train_loss[i], valid_loss[i], test_loss[i]])
+    # logger.plot()
+
+    # Example: logger monitor
+    paths = {
+    'resadvnet20':'/home/wyang/code/pytorch-classification/checkpoint/cifar10/resadvnet20/log.txt', 
+    'resadvnet32':'/home/wyang/code/pytorch-classification/checkpoint/cifar10/resadvnet32/log.txt',
+    'resadvnet44':'/home/wyang/code/pytorch-classification/checkpoint/cifar10/resadvnet44/log.txt',
+    }
+
+    field = ['Valid Acc.']
+
+    monitor = LoggerMonitor(paths)
+    monitor.plot(names=field)
+    savefig('test.eps')

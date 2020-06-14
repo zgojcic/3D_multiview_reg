@@ -149,7 +149,7 @@ if __name__ == "__main__":
     if not os.path.exists(cfg['misc']['log_dir']):
         os.makedirs(cfg['misc']['log_dir'])
 
-    logger, checkpoint_dir = prepare_logger(cfg)
+    logger, checkpoint_dir = prepare_logger(cfg,cfg['misc']['log_path'])
     
     cfg['misc']['log_dir'] = checkpoint_dir
     # Argument: path to the config file
