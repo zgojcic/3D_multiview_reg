@@ -1,0 +1,27 @@
+method:
+  task: pairwise # Name of the task, one of [pairwise, multiview]
+  descriptor_module: null # Descriptor method to be used. If null precomputed correspondences are used for training.
+  filter_module: oanet # Filtering method to be used.
+
+misc:
+  run_mode: train # Mode to run the network in 
+  net_depth: 12 # Number of layers
+  clusters: 500 # Number of clusters
+  iter_num: 1   # Number of iterations in the iterative network
+  net_channel: 128 # Number of channels in a layer
+  trainer: 'PairwiseTrainer' # Which class of trainer to use. Can be used if multiple different trainers are defined.
+  use_gpu: True # If GPU should be used or not
+  best_validation_metric: loss # Which validation metric to use. 0 Transformation loss, 1 Classification loss
+  log_dir: ./logs/pairwise_registration # Path to the folder where the models and logs will be saves
+  normalize_weights: True # If the inferred per point weights should be normalized to sum to 1 before SVD
+  trans_loss_margin: 0.1 # Value for clipping the transformation loss
+  inlier_weight_threshold: 0.5 # Threshold for determining the inlier/outlier class
+
+train:
+  samp_type: rand # Sampler type on of [rand, fps]
+  corr_type: soft # Feature matching type on of [soft, hard, gumbel_soft]
+  st_grad_flag: True # If true and soft or gumbel_soft corr are selected, the gradients are propagated straight through (https://arxiv.org/abs/1308.3432)
+
+data:
+  max_num_points: 5000 #Number of keypoints to use per training example
+  use_mutuals: 0 # Use mutuals as side information in the network
