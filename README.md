@@ -152,7 +152,6 @@ python ./scripts/extract_data.py \
 			--extract_correspondences \
 			--with_cuda \
 
-bash scripts/download_preprocessed_3DMatch.sh
 ```
 
 Then you can run the pairwise registration evaluation using our RegBlock (with all points) as
