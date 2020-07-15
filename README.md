@@ -1,4 +1,4 @@
-# Learning Multiview 3D Point Cloud Registration repository
+# Learning Multiview 3D Point Cloud Registration 
 This repository provides code and data to train and evaluate the LMPCR, the first end-to-end algorithm for multiview registration of raw point clouds in a globally consistent manner. It represents the official implementation of the paper:
 
 ### [Learning Multiview 3D Point Cloud Registration (CVPR 2020).](https://arxiv.org/pdf/2001.05119.pdf)
