@@ -159,7 +159,7 @@ Then you can run the pairwise registration evaluation using our RegBlock (with a
 ```bash
 source activate lmpr
 python ./scripts/benchmark_pairwise_registration.py \
-		--source ./data/eval_data/3d_match/ \
+		--source ./data/eval_data/ \
 		--dataset 3d_match \
 		--method RegBlock \
 		--model ./pretrained/RegBlock/model_best.pt \

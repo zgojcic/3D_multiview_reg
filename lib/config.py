@@ -1,10 +1,9 @@
 
-from lib import pairwise, multiview
+from lib import pairwise
 import torch
 
 method_dict = {
     'pairwise': pairwise,
-    'multiview': multiview,
 }
 
 

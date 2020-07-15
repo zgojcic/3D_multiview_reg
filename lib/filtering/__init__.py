@@ -1,4 +1,4 @@
-from lib.filtering import , oanet
+from lib.filtering import oanet
 
 
 filtering_dict = {
