@@ -194,6 +194,6 @@ python ./scripts/pairwise_demo.py \
 		--target_pc ./data/demo/pairwise/raw_data/cloud_bin_1.ply \
 		--model pairwise_reg.pt \
 		--verbose \
-		--visualize \
+		--visualize
 ```
 which will register the two point clouds, visualize them before and after the registration, and save the estimated transformation parameters.
