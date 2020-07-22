@@ -477,7 +477,7 @@ def read_trajectory(filename, dim=4):
 
 
 
-def write_trajectory(traj,metadata, filename, dim=4):
+def write_trajectory(traj, metadata, filename, dim=4):
     """
     Writes the trajectory into a '.txt' file in 3DMatch/Redwood format. 
     Format specification can be found at http://redwood-data.org/indoor/fileformat.html
@@ -492,7 +492,7 @@ def write_trajectory(traj,metadata, filename, dim=4):
     with open(filename, 'w') as f:
         for idx in range(traj.shape[0]):
             # Only save the transfromation parameters for which the overlap threshold was satisfied
-            if metadata[idx][2]:
+            if metadata[idx][2] == 'True':
                 p = traj[idx,:,:].tolist()
                 f.write('\t'.join(map(str, metadata[idx])) + '\n')
                 f.write('\n'.join('\t'.join(map('{0:.12f}'.format, p[i])) for i in range(dim)))
@@ -873,7 +873,7 @@ def extract_overlaping_pairs(xyz, feat, conectivity_info=None):
         for comb in list(combinations(range(xyz.shape[0]), 2)):
             pairs.append(torch.tensor([int(comb[0]), int(comb[1])]))
 
-        conectivity_info = torch.stack(pairs, dim=0).to(xyz)
+        conectivity_info = torch.stack(pairs, dim=0).to(xyz.device).long()
 
     # Build the point cloud pairs based on the conectivity information
     xyz_s = torch.index_select(xyz, dim=0, index=conectivity_info[:, 0])
@@ -891,7 +891,7 @@ def construct_filtering_input_data(xyz_s, xyz_t, data, overlapped_pair_tensors, 
     
     Args:
     xyz_s (torch tensor): coordinates of the sampled points in the source point cloud [b,n,3]
-    xyz_t (torch tensor): coordinates of the correspondences from the traget point cloud [b,n,3]
+    xyz_t (torch tensor): coordinates of the correspondences from the target point cloud [b,n,3]
     data (dict): input data from the data loader
     dist_th (float): distance threshold to determine if the correspondence is an inlier or an outlier
     mutuals (torch tensor): torch tensor of the mutually nearest neighbors (can be used as side information to the filtering network)
@@ -902,10 +902,15 @@ def construct_filtering_input_data(xyz_s, xyz_t, data, overlapped_pair_tensors, 
     """
 
     filtering_data = {}
-    Rs, ts = extract_transformation_matrices(data['T_global_0'], overlapped_pair_tensors)
 
-
-    ys = transformation_residuals(xyz_s, xyz_t, Rs, ts)
+    if 'T_global_0' in data:
+        Rs, ts = extract_transformation_matrices(data['T_global_0'], overlapped_pair_tensors)
+        ys = transformation_residuals(xyz_s, xyz_t, Rs, ts)
+    
+    else: 
+        ys = torch.zeros(xyz_s.shape[0], xyz_s.shape[1], 1)
+        Rs = torch.eye(3).unsqueeze(0).repeat(xyz_s.shape[0],1,1)
+        ts = torch.zeros(xyz_s.shape[0], 3, 1)
 
     xs = torch.cat((xyz_s,xyz_t),dim=-1) # [b, n, 6]
 
@@ -918,7 +923,7 @@ def construct_filtering_input_data(xyz_s, xyz_t, data, overlapped_pair_tensors, 
 
 
     # Construct the data dictionary
-    filtering_data['xs'] = xs
+    filtering_data['xs'] = xs.unsqueeze(1)
     filtering_data['ys'] = ys
     filtering_data['ts'] = ts
     filtering_data['Rs'] = Rs 
@@ -960,8 +965,8 @@ def extract_transformation_matrices(T0, indices):
     return rots, trans 
 
 
-def pairwise_distance(src, dst, normalized_feature=True):
-    """Calculate Euclidean distance between each two points.
+def pairwise_distance(src, dst, normalized_feature=False):
+    """Calculates squared Euclidean distance between each two points.
 
     Args:
         src (torch tensor): source data, [b, n, c]
@@ -975,15 +980,16 @@ def pairwise_distance(src, dst, normalized_feature=True):
     B, N, _ = src.shape
     _, M, _ = dst.shape
     
-    dist = torch.matmul(src, dst.permute(0, 2, 1))
+    # Minus such that smaller value still means closer 
+    dist = -torch.matmul(src, dst.permute(0, 2, 1))
 
     # If features are normalized the distance is related to inner product
     if not normalized_feature:
-        dist = -2 * dists
+        dist = 2 * dist
         dist += torch.sum(src ** 2, dim=-1)[:, :, None]
         dist += torch.sum(dst ** 2, dim=-1)[:, None, :]
 
-    return torch.sqrt(dist)
+    return dist
 
 
 

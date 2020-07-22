@@ -22,7 +22,7 @@ class CheckpointIO(object):
         self.checkpoint_dir = checkpoint_dir
         self.initialize_from = initialize_from
         self.initialization_file_name = initialization_file_name
-        if not os.path.exists(checkpoint_dir):
+        if checkpoint_dir != '' and not os.path.exists(checkpoint_dir):
             os.makedirs(checkpoint_dir)
 
     def register_modules(self, **kwargs):
@@ -43,7 +43,7 @@ class CheckpointIO(object):
             outdict[k] = v.state_dict()
         torch.save(outdict, filename)
 
-    def load(self, filename):
+    def load(self, filename='model.pt'):
         '''Loads a module dictionary from local file or url.
         Args:
             filename (str): name of saved module dictionary
@@ -70,9 +70,14 @@ class CheckpointIO(object):
             return scalars
         else:
             if self.initialize_from is not None:
-                self.initialize_weights()
-            raise FileExistsError
+                state_dict = torch.load(os.path.join(
+                self.initialize_from, self.initialization_file_name))
+                scalars = self.parse_state_dict(state_dict)
+                            
+                return scalars
 
+            raise FileExistsError
+        
     def load_url(self, url):
         '''Load a module dictionary from url.
         Args:
@@ -103,7 +108,9 @@ class CheckpointIO(object):
         ''' Initializes the model weights from another model file.
         '''
 
-        print('Intializing weights from model %s' % self.initialize_from)
+        print('Intializing weights from model {}'.format(os.path.join(
+                    self.initialize_from, self.initialization_file_name)))
+
         filename_in = os.path.join(
                     self.initialize_from, self.initialization_file_name)
 

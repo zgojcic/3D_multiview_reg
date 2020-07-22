@@ -14,10 +14,11 @@ class Soft_NN(torch.nn.Module):
         corr_type (string): type of the NN search 
         st (bool): if straight through gradient propagation should be used (biased) (https://arxiv.org/abs/1308.3432)
         inv_temp (float): initial value for the inverse temperature used in softmax and gumbel_softmax
+        device (torch device): device to use
 
     """
 
-    def __init__(self, corr_type='soft', st=True, inv_temp=10):
+    def __init__(self, corr_type='soft', st=True, temp = 0.3, min_temp = 1e-4, device = 'cuda'):
         super().__init__()
 
         assert corr_type in ['soft', 'hard', 'soft_gumbel'], 'Wrong correspondence type selected. Must be one of [soft, soft_gumbel, hard]' 
@@ -25,12 +26,20 @@ class Soft_NN(torch.nn.Module):
         if corr_type == 'hard':
             print('Gradients cannot be backpropagated to the feature descriptor because hard NN search is selected.')
 
-        self.temp_inv = torch.nn.Parameter(torch.tensor([inv_temp], requires_grad=True, dtype=torch.float))
-
+        self.device = device        
         self.corr_type = corr_type
         self.st = st
 
+        self.min_temp = torch.tensor([min_temp]).to(self.device)
+        self._temperature = torch.nn.Parameter(torch.tensor(
+                temp,
+                requires_grad=True,
+                dtype=torch.float32,
+            ).to(self.device)
+        )
 
+    def get_temp(self):
+        return torch.max(self._temperature**2, self.min_temp).to(self.device)
 
     def forward(self, x_f, y_f, y_c):
         """ Computes the correspondences in the feature space based on the selected parameters.
@@ -45,13 +54,11 @@ class Soft_NN(torch.nn.Module):
          
         """
 
-        dist = pairwise_distance(x_f,y_f)
-        #dist_min = torch.min(dist, dim=2,keepdim=True).values
-        #dist = dist - dist_min
+        dist = pairwise_distance(x_f,y_f).detach()
 
         if self.corr_type == 'soft':
 
-            y_soft = torch.softmax(-dist*self.temp_inv, dim=2)
+            y_soft = torch.softmax(-dist/(self.get_temp()), dim=2)
 
             if self.st:
                 # Straight through.
@@ -66,9 +73,9 @@ class Soft_NN(torch.nn.Module):
 
             if self.st:
                 # Straight through.
-                ret = F.gumbel_softmax(-dist, tau=1.0/self.temp_inv, hard=True)
+                ret = F.gumbel_softmax(-dist, tau=self.get_temp(), hard=True)
             else:
-                ret = F.gumbel_softmax(-dist, tau=1.0/self.temp_inv, hard=False)
+                ret = F.gumbel_softmax(-dist, tau=self.get_temp(), hard=False)
 
         else:
             index = dist.min(dim=2, keepdim=True)[1]
@@ -118,14 +125,14 @@ class Sampler(torch.nn.Module):
         sampled_C = []
         
         # Final number of points to be sampled is the min of the desired number of points and smallest number of point in the batch
-        num_points = min(self.targeted_num_points, min(pts_list))
+        num_points = min(self.targeted_num_points, min(pts_list.cpu().numpy()))
 
         for i in range(len(pts_list)):
 
-            pcd_range = np.arange(sum(pts_list[:i]), sum(pts_list[:(i + 1)]), 1)
+            pcd_range = torch.arange(torch.sum(pts_list[:i]), torch.sum(pts_list[:(i + 1)]), 1)
 
             if self.samp_type == 'fps':
-                temp_pcd = torch.index_select(input_C, dim=0, index=torch.from_numpy(pcd_range).to(input_C).long())
+                temp_pcd = torch.index_select(input_C, dim=0, index=pcd_range.to(input_C).long())
                 
                 # Perform farthest point sampling on the current point cloud
                 idxs = pointnet2_utils.furthest_point_sample(temp_pcd, num_points)
@@ -135,12 +142,16 @@ class Sampler(torch.nn.Module):
 
             elif self.samp_type == 'rand':
                 # Randomly select the indices to keep
-                idxs = torch.from_numpy(np.random.choice(pcd_range,num_points, replace=False)).to(input_C)
+                if num_points >= self.targeted_num_points:
+                    idxs = torch.from_numpy(np.random.choice(pcd_range, self.targeted_num_points, replace=False)).to(input_C)
+                else:
+                    idxs = torch.from_numpy(np.random.choice(pcd_range, self.targeted_num_points, replace=True)).to(input_C)
+
 
             sampled_F.append(torch.index_select(input_F, dim=0, index=idxs.long()))
             sampled_C.append(torch.index_select(input_C, dim=0, index=idxs.long()))
 
-        return torch.stack(sampled_C, dim=0), torch.stack(sampled_F, dim=0) 
+        return torch.stack(sampled_C, dim=0), torch.stack(sampled_F, dim=0)  
 
 
         

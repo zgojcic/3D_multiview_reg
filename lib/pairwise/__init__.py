@@ -35,19 +35,19 @@ class PairwiseReg(nn.Module):
                 filtering_module, device, samp_type='fps', 
                 corr_type = 'soft', mutuals_flag=False, 
                 connectivity_info=None, tgt_num_points=2000, 
-                straight_through_gradient=True):
+                straight_through_gradient=True, train_descriptor=False):
         super().__init__()
 
         self.device = device
         self.samp_type = samp_type
         self.corr_type = corr_type
                 
-        self.mutuals_flag = mutuals_flag
-        
-
+        self.mutuals = mutuals_flag
         self.connectivity_info = connectivity_info
-
+        self.train_descriptor = train_descriptor
+        
         self.descriptor_module = descriptor_module
+
 
         # If the descriptor module is not specified, precomputed descriptor data should be used
         if self.descriptor_module:    
@@ -82,13 +82,14 @@ class PairwiseReg(nn.Module):
 
         if not self.precomputed_desc:
 
-            xyz_down = input_dict['sinput0_C']
+            xyz_down = input_dict['pcd0'].to(self.device)
 
             sinput0 = ME.SparseTensor(
                 input_dict['sinput0_F'], coords=input_dict['sinput0_C']).to(self.device)
 
             F0 = self.descriptor_module(sinput0).F
 
+            test = torch.any(torch.isnan(F0))
             # If the FCGF descriptor should be trained with the FCGF loss (need also corresponding desc.)
             if self.train_descriptor:
                 sinput1 = ME.SparseTensor(
@@ -100,7 +101,7 @@ class PairwiseReg(nn.Module):
 
 
             # Sample the points
-            xyz_batch, f_batch = self.sampler(xyz_down, F0, input_dict['pts_list'])
+            xyz_batch, f_batch = self.sampler(xyz_down, F0, input_dict['pts_list'].to(self.device))
 
             # Build point cloud pairs for the inference
             xyz_s, xyz_t, f_s, f_t = extract_overlaping_pairs(xyz_batch, f_batch, self.connectivity_info)
@@ -110,13 +111,13 @@ class PairwiseReg(nn.Module):
             nn_C_t_s = self.feature_matching(f_t, f_s, xyz_s) # NNs of the target points in the source point cloud
             
 
-            if self.mutuals_flag:
+            if self.mutuals:
                 mutuals = extract_mutuals(xyz_s, xyz_t, nn_C_s_t, nn_C_t_s)
             else:
                 mutuals = None
 
             # Prepare the input for the filtering block
-            filtering_input = construct_filtering_input_data(xyz_s, xyz_t, input_dict, self.mutuals)
+            filtering_input = construct_filtering_input_data(xyz_s, nn_C_s_t, input_dict, self.mutuals)
 
         else:
             filtering_input = input_dict

@@ -100,16 +100,15 @@ class FCGFNet(ME.MinkowskiNetwork):
   CHANNELS = [None, 32, 64, 128, 256]
   TR_CHANNELS = [None, 64, 64, 64, 128]
 
-  # To use the model, must call initialize_coords before forward pass.
+    # To use the model, must call initialize_coords before forward pass.
   # Once data is processed, call clear to reset the model before calling initialize_coords
   def __init__(self,
-               in_channels=3,
+               in_channels=1,
                out_channels=32,
-               bn_momentum=0.1,
+               bn_momentum=0.05,
                normalize_feature=True,
                conv1_kernel_size=7,
                D=3):
-
     ME.MinkowskiNetwork.__init__(self, D)
     NORM_TYPE = self.NORM_TYPE
     BLOCK_NORM_TYPE = self.BLOCK_NORM_TYPE
@@ -124,7 +123,6 @@ class FCGFNet(ME.MinkowskiNetwork):
         dilation=1,
         has_bias=False,
         dimension=D)
-        
     self.norm1 = get_norm(NORM_TYPE, CHANNELS[1], bn_momentum=bn_momentum, D=D)
 
     self.block1 = get_block(
@@ -279,6 +277,5 @@ class FCGFNet(ME.MinkowskiNetwork):
           coords_key=out.coords_key,
           coords_manager=out.coords_man)
     else:
-      
-        return out
+      return out
 

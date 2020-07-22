@@ -1,0 +1,26 @@
+method:
+  task: pairwise # Name of the task, one of [pairwise, multiview]
+  descriptor_module: fcgf # Descriptor method to be used. If null precomputed correspondences are used for training.
+  filter_module: oanet # Filtering method to be used.
+
+misc:
+  net_depth: 12 # Number of layers
+  clusters: 500 # Number of clusters
+  iter_num: 1   # Number of iterations in the iterative network
+  net_channel: 128 # Number of channels in a layer
+  use_gpu: True # If GPU should be used or not
+  normalize_weights: True # If the inferred per point weights should be normalized to sum to 1 before SVD
+  inlier_weight_threshold: 0.5 # Threshold for determining the inlier/outlier class
+  voxel_size: 0.025
+  matching_voxel_size: 0.0375
+
+data:
+  use_mutuals: True # Use only mutual nearest neighbors or all correspondences. 0 do not use, 1 use as filter, 2 use as side info
+  mutual_nn_thresh: 0.025 # Threshold used to determine mutually closest nn when soft correspondences are used
+  max_num_points: 5000 #Number of keypoints to use per training example
+
+train:
+  samp_type: rand # Sampler type on of [rand, fps]
+  corr_type: soft # Feature matching type on of [soft, hard, gumbel_soft]
+  st_grad_flag: False # If true and soft or gumbel_soft corr are selected, the gradients are propagated straight through (https://arxiv.org/abs/1308.3432)
+

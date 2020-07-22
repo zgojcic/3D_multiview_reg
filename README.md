@@ -182,3 +182,18 @@ bash scripts/download_redwood_eval.sh preprocessed
 The rest of the evaluation follow the same procedure as for 3DMatch, you simply have to replace the dataset argument with `--dataset redwood`
 
 **NOTE**: Using the currently provided model the performance is slightly worse then reported in the paper. The model will be updated in the following days.
+
+### Demo 
+
+Pairwise registration demo can be run after downloading the pretrained models as 
+```bash
+source activate lmpr
+python ./scripts/pairwise_demo.py \
+		./configs/pairwise_registration/demo/config.yaml \
+		--source_pc ./data/demo/pairwise/raw_data/cloud_bin_0.ply \
+		--target_pc ./data/demo/pairwise/raw_data/cloud_bin_1.ply \
+		--model pairwise_reg.pt \
+		--verbose \
+		--visualize \
+```
+which will register the two point clouds, visualize them before and after the registration, and save the estimated transformation parameters.
